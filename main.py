@@ -192,14 +192,8 @@ def on_press(key):
         return
     pressed.add(key)
 
-    # take players screenshots =======================================
-    if pressed == {keyboard.Key.enter}:
-        run()
-        show_current_data()
-        return
-    
     # save dataset =======================================
-    if pressed == {keyboard.Key.ctrl_l}:
+    if pressed == {keyboard.Key.enter}:
         save_data()
         return
     
@@ -255,6 +249,7 @@ def on_press(key):
     
     if hasattr(key, 'char') and key.char is not None:
         # Verifica se uma tecla de letra (a-z) foi pressionada
+        # select role and take players screenshots =======================================
         if key.char.isalpha():
             letter = key.char.lower()
             if letter == 't':
@@ -267,7 +262,11 @@ def on_press(key):
                 selected_role = Role.ADC.value
             elif letter == 's':
                 selected_role = Role.SUPPORT.value
-            notify(rf"Role selected: {selected_role}", "Role selection")
+            
+            if letter in ['t', 'j', 'm', 'a', 's']:
+                run()
+                show_current_data()
+                notify(rf"Role selected: {selected_role}", "Role selection")
             return
         
         # Verifica se uma tecla numérica (0-9) foi pressionada
