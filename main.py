@@ -4,6 +4,9 @@ from pynput import keyboard
 from win10toast import ToastNotifier
 import re
 import os
+import warnings
+
+warnings.filterwarnings("ignore")
 
 class Role(Enum):
     TOP = "top"
@@ -41,6 +44,7 @@ PLAYER4_DELIMITER = 188 # delimiter based on "mini_map_position_x"
 
 SAVE_DATASET_DIR = fr"./dataset"
 IMAGE_EXTENSION = ".png"
+TURN_OFF_NOTIFICATIONS = True
 
 def find_last_match(directory):
     pattern = re.compile(r'^Match(\d+)\b')  # Captura "Match" seguido de números
@@ -55,16 +59,36 @@ def find_last_match(directory):
 
     return great_num if great_num != -1 else None
 
-def notify(message: str, tittle: str = "Notification", duracao: int = 1):
-    toaster = ToastNotifier()
-    toaster.show_toast(tittle, message, duration=duracao, threaded=True)
+def notify(message: str, tittle: str = "Notification", duration: int = 1, turn_off: bool = TURN_OFF_NOTIFICATIONS) -> None:
     print("\t" + tittle + ": " + message)
+    if turn_off:
+        return
+    toaster = ToastNotifier()
+    toaster.show_toast(tittle, message, duration=duration, threaded=True)
+
+def show_current_data():
+    global global_match_data, red_team_roles, blue_team_roles
+
+    col_titles = ["Player 1", "Player 2", "Player 3", "Player 4", "Player 5"]
+    row_titles = ["Red Team", "Blue Team"]
+
+    col_width = 9
+    def format_row(cells):
+        return "| " + " | ".join(cell.ljust(col_width) for cell in cells) + " |"
+    
+    header = format_row([""] + col_titles)
+    separator = "+" + "+".join(["-" * (col_width + 2)] * (len(col_titles) + 1)) + "+"
+    print(separator)
+    print(fr"Win team: {global_match_data[2]} | Time: {global_match_data[1]} min.")
+    print(separator)
+    print(header)
+    print(separator)
+    print(format_row([row_titles[0]] + red_team_roles))
+    print(format_row([row_titles[1]] + blue_team_roles))
+    print(separator)
 
 def take_screenshot(x, y, x_offset=MINI_MAP_OFFSET_X, y_offset=MINI_MAP_OFFSET_Y, save_as='screenshot.png', return_image = False):
-    """
-    Tira uma screenshot de uma área retangular com tamanho 283x283
-    a partir da coordenada (x, y) e salva com o nome especificado.
-    """
+
     image = pyautogui.screenshot(region=(x, y, x_offset, y_offset))
     if return_image:
         return image
@@ -75,16 +99,6 @@ def get_cursor_position():
     return x, y
 
 def run():
-    """
-    global counter
-    time = 0
-    is_win = False
-    role = Role.JUNGLE.value
-    win_team = Team.RED.value
-
-    player_label = fr"Match{counter} Ind {is_win} {role}.png"
-    global_label = fr"Match{counter} Glob {time} {win_team}.png"
-    """
     global blue_team_roles, red_team_roles, selected_role, mini_map_position_x, mini_map_position_y
     if not selected_role:
         notify("Role not defined")
@@ -144,7 +158,7 @@ def save_data():
         notify("Blue team images incomplete")
         return
     
-    global_match_data[2] = 111 # TODO
+    global_match_data[1] = 111 # TODO
 
     if None in global_match_data:
         notify("Global match data incomplete")
@@ -178,6 +192,7 @@ def on_press(key):
     #print("on_press method: " + str(pressed))
     if pressed == {keyboard.Key.enter}:
         run()
+        show_current_data()
         return
     
     if pressed == {keyboard.Key.ctrl_l}:
@@ -198,7 +213,7 @@ def on_press(key):
         notify(fr"New mini-map position defined {mini_map_position_x}x{mini_map_position_y}")
         return
     
-    if pressed == {keyboard.Key.right}:
+    if pressed == {keyboard.Key.backspace}:
         # set default values
         selected_role = None
         red_team_roles = EMPTY_LIST.copy()
