@@ -198,7 +198,7 @@ def on_press(key):
         return
     
     # define mini-map position and take global map screenshot =======================================
-    if pressed == {keyboard.Key.right}:
+    if pressed == {keyboard.Key.ctrl_l}:
         # set default values
         selected_role = None
         red_team_roles = EMPTY_LIST.copy()
