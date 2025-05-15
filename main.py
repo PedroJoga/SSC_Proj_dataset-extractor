@@ -21,14 +21,14 @@ class Team(Enum):
 
 mini_map_position_x = 0
 mini_map_position_y = 0
-MINI_MAP_OFFSET_X = 226
-MINI_MAP_OFFSET_Y = 226
+MINI_MAP_OFFSET_X = 277
+MINI_MAP_OFFSET_Y = 277
 
-TEAM_SIDE_DELIMITER = 285 # delimiter based on "mini_map_position_y"
-PLAYER1_DELIMITER = 38 # delimiter based on "mini_map_position_x"
-PLAYER2_DELIMITER = 88 # delimiter based on "mini_map_position_x"
-PLAYER3_DELIMITER = 138 # delimiter based on "mini_map_position_x"
-PLAYER4_DELIMITER = 188 # delimiter based on "mini_map_position_x"
+TEAM_SIDE_DELIMITER = 350 # delimiter based on "mini_map_position_y"
+PLAYER1_DELIMITER = 46 # delimiter based on "mini_map_position_x"
+PLAYER2_DELIMITER = 108 # delimiter based on "mini_map_position_x"
+PLAYER3_DELIMITER = 171 # delimiter based on "mini_map_position_x"
+PLAYER4_DELIMITER = 233 # delimiter based on "mini_map_position_x"
 
 pressed = set()
 
@@ -43,7 +43,7 @@ blue_team_images = EMPTY_LIST.copy()
 EMPTY_GLOBAL_MATCH_DATA = {"image": "", "time": "", "win_team": ""}
 global_match_data = EMPTY_GLOBAL_MATCH_DATA.copy()
 
-SAVE_DATASET_DIR = fr"./dataset"
+SAVE_DATASET_DIR = fr"./dataset/"
 IMAGE_EXTENSION = ".png"
 TURN_OFF_NOTIFICATIONS = True
 
@@ -85,8 +85,8 @@ def show_current_data():
     print(separator)
     print(header)
     print(separator)
-    print(format_row([row_titles[0]] + red_team_roles))
     print(format_row([row_titles[1]] + blue_team_roles))
+    print(format_row([row_titles[0]] + red_team_roles))
     print(separator)
 
 
@@ -284,7 +284,7 @@ def on_release(key):
 
 if __name__ == "__main__":
     counter = find_last_match(SAVE_DATASET_DIR)
-    if counter:
+    if not counter:
         counter = 1
 
     with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
