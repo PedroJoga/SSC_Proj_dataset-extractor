@@ -40,7 +40,7 @@ red_team_roles = EMPTY_LIST.copy() # [<player1>, <player2>, <player3>, <player4>
 red_team_images = EMPTY_LIST.copy()
 blue_team_roles = EMPTY_LIST.copy()
 blue_team_images = EMPTY_LIST.copy()
-EMPTY_GLOBAL_MATCH_DATA = {"image": None, "time": "", "win_team": None}
+EMPTY_GLOBAL_MATCH_DATA = {"image": "", "time": "", "win_team": ""}
 global_match_data = EMPTY_GLOBAL_MATCH_DATA.copy()
 
 SAVE_DATASET_DIR = fr"./dataset"
@@ -161,7 +161,7 @@ def save_data():
         show_current_data()
         return
     
-    if any(value is None or value == '' for value in global_match_data.values()):
+    if any(value == "" for value in global_match_data.values()):
         notify("Global match data incomplete")
         show_current_data()
         return
@@ -184,23 +184,24 @@ def save_data():
     notify(rf"Iteration {counter} completed, going to next...")
     counter += 1
         
-    
-
 def on_press(key):
     global mini_map_position_x, mini_map_position_y, selected_role, global_match_data, red_team_roles, blue_team_roles, red_team_images, blue_team_images
     if pressed:
         return
     pressed.add(key)
 
+    # take players screenshots =======================================
     if pressed == {keyboard.Key.enter}:
         run()
         show_current_data()
         return
     
+    # save dataset =======================================
     if pressed == {keyboard.Key.ctrl_l}:
         save_data()
         return
     
+    # define mini-map position and take global map screenshot =======================================
     if pressed == {keyboard.Key.right}:
         # set default values
         selected_role = None
@@ -216,11 +217,13 @@ def on_press(key):
         notify(fr"New mini-map position defined {mini_map_position_x}x{mini_map_position_y}")
         return
     
+    # reset time =======================================
     if pressed == {keyboard.Key.left}:
         global_match_data["time"] = ""
         notify(fr"Time reset")
         return
     
+    # reset roles and take global map screenshot =======================================
     if pressed == {keyboard.Key.backspace}:
         # set default values
         selected_role = None
@@ -235,11 +238,13 @@ def on_press(key):
         notify(fr"New dataset initiated")
         return
 
+    # define win team =======================================
     if pressed == {keyboard.Key.down}:
         global_match_data["win_team"] = Team.RED.value
         notify(fr"{Team.RED.value} Team Wins", "Win team defined")
         return
 
+    # define win team =======================================
     if pressed == {keyboard.Key.up}:
         global_match_data["win_team"] = Team.BLUE.value
         notify(fr"{Team.BLUE.value} Team Wins", "Win team defined")
@@ -262,7 +267,8 @@ def on_press(key):
                 selected_role = Role.SUPPORT.value
             notify(rf"Role selected: {selected_role}", "Role selection")
             return
-                # Verifica se uma tecla numérica (0-9) foi pressionada
+        
+        # Verifica se uma tecla numérica (0-9) foi pressionada
         if key.char.isdigit():
             global_match_data["time"] = global_match_data["time"] + str(key.char)
             notify(rf"Time updated: {global_match_data["time"]}", "Time selection")
@@ -275,15 +281,10 @@ def on_release(key):
         pressed.remove(key)
 
 
-
-
-# Exemplo de uso
 if __name__ == "__main__":
     counter = find_last_match(SAVE_DATASET_DIR)
-
     if counter:
         counter = 1
-
 
     with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
         listener.join()
