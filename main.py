@@ -75,10 +75,11 @@ def show_current_data():
 
     col_width = 9
     def format_row(cells):
-        return "| " + " | ".join(cell.ljust(col_width) for cell in cells) + " |"
+        return "| " + " | ".join(str(cell if cell is not None else "").ljust(col_width) for cell in cells) + " |"
     
     header = format_row([""] + col_titles)
     separator = "+" + "+".join(["-" * (col_width + 2)] * (len(col_titles) + 1)) + "+"
+
     print(separator)
     print(fr"Win team: {global_match_data["win_team"]} | Time: {global_match_data["time"]} min.")
     print(separator)
@@ -87,6 +88,7 @@ def show_current_data():
     print(format_row([row_titles[0]] + red_team_roles))
     print(format_row([row_titles[1]] + blue_team_roles))
     print(separator)
+
 
 def take_screenshot(x, y, x_offset=MINI_MAP_OFFSET_X, y_offset=MINI_MAP_OFFSET_Y, save_as='screenshot.png', return_image = False):
 
