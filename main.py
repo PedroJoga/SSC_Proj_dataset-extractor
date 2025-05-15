@@ -1,0 +1,260 @@
+import pyautogui
+from enum import Enum
+from pynput import keyboard
+from win10toast import ToastNotifier
+import re
+import os
+
+class Role(Enum):
+    TOP = "top"
+    JUNGLE = "jungle"
+    MID = "mid"
+    ADC = "adc"
+    SUPPORT = "support"
+
+class Team(Enum):
+    RED = "red"
+    BLUE = "blue"
+
+pressed = set()
+
+mini_map_position_x = 0
+mini_map_position_y = 0
+MINI_MAP_OFFSET_X = 226
+MINI_MAP_OFFSET_Y = 226
+
+counter = 1
+selected_role = None
+
+EMPTY_LIST = [None, None, None, None, None]
+red_team_roles = EMPTY_LIST.copy() # [<player1>, <player2>, <player3>, <player4>, <player5>]
+red_team_images = EMPTY_LIST.copy()
+blue_team_roles = EMPTY_LIST.copy()
+blue_team_images = EMPTY_LIST.copy()
+global_match_data = [] # [<image>, <time>, <win_team>]
+
+TEAM_SIDE_DELIMITER = 285 # delimiter based on "mini_map_position_y"
+PLAYER1_DELIMITER = 38 # delimiter based on "mini_map_position_x"
+PLAYER2_DELIMITER = 88 # delimiter based on "mini_map_position_x"
+PLAYER3_DELIMITER = 138 # delimiter based on "mini_map_position_x"
+PLAYER4_DELIMITER = 188 # delimiter based on "mini_map_position_x"
+
+SAVE_DATASET_DIR = fr"./dataset"
+IMAGE_EXTENSION = ".png"
+
+def find_last_match(directory):
+    pattern = re.compile(r'^Match(\d+)\b')  # Captura "Match" seguido de números
+
+    great_num = -1
+    for file_name in os.listdir(directory):
+        match = pattern.match(file_name)
+        if match:
+            num = int(match.group(1))
+            if num > great_num:
+                great_num = num
+
+    return great_num if great_num != -1 else None
+
+def notify(message: str, tittle: str = "Notification", duracao: int = 1):
+    toaster = ToastNotifier()
+    toaster.show_toast(tittle, message, duration=duracao, threaded=True)
+    print("\t" + tittle + ": " + message)
+
+def take_screenshot(x, y, x_offset=MINI_MAP_OFFSET_X, y_offset=MINI_MAP_OFFSET_Y, save_as='screenshot.png', return_image = False):
+    """
+    Tira uma screenshot de uma área retangular com tamanho 283x283
+    a partir da coordenada (x, y) e salva com o nome especificado.
+    """
+    image = pyautogui.screenshot(region=(x, y, x_offset, y_offset))
+    if return_image:
+        return image
+    image.save(save_as)
+
+def get_cursor_position():
+    x, y = pyautogui.position()
+    return x, y
+
+def run():
+    """
+    global counter
+    time = 0
+    is_win = False
+    role = Role.JUNGLE.value
+    win_team = Team.RED.value
+
+    player_label = fr"Match{counter} Ind {is_win} {role}.png"
+    global_label = fr"Match{counter} Glob {time} {win_team}.png"
+    """
+    global blue_team_roles, red_team_roles, selected_role, mini_map_position_x, mini_map_position_y
+    if not selected_role:
+        notify("Role not defined")
+        return
+
+
+    x, y = get_cursor_position()   
+
+    if y < mini_map_position_y + TEAM_SIDE_DELIMITER:
+        # blue team  
+        selected_team_roles = blue_team_roles
+        selected_team_images = blue_team_images
+    else:
+        selected_team_roles = red_team_roles
+        selected_team_images = red_team_images
+
+    image = take_screenshot(mini_map_position_x, mini_map_position_y, return_image=True)
+
+    if x < mini_map_position_x + PLAYER1_DELIMITER:
+        #player1
+        selected_team_roles[0] = selected_role
+        selected_team_images[0] = image.copy()
+    elif x < mini_map_position_x + PLAYER2_DELIMITER:
+        #player2
+        selected_team_roles[1] = selected_role
+        selected_team_images[1] = image.copy()
+    elif x < mini_map_position_x + PLAYER3_DELIMITER:
+        #player3
+        selected_team_roles[2] = selected_role
+        selected_team_images[2] = image.copy()
+    elif x < mini_map_position_x + PLAYER4_DELIMITER:
+        #player4
+        selected_team_roles[3] = selected_role
+        selected_team_images[3] = image.copy()
+    else:
+        #player5
+
+        selected_team_roles[4] = selected_role
+        selected_team_images[4] = image.copy()
+
+def save_data():
+    global counter, red_team_roles, red_team_images, blue_team_roles, blue_team_images
+
+    if None in red_team_roles:
+        notify("Red team role incomplete")
+        return
+
+    if None in red_team_images:
+        notify("Red team images incomplete")
+        return
+    
+    if None in blue_team_roles:
+        notify("Blue team role incomplete")
+        return
+    
+    if None in blue_team_images:
+        notify("Blue team images incomplete")
+        return
+    
+    global_match_data[2] = 111 # TODO
+
+    if None in global_match_data:
+        notify("Global match data incomplete")
+
+    notify("go_next_iteration()")
+    global_label = fr"Match{counter} Glob {global_match_data[1]} {global_match_data[2]}{IMAGE_EXTENSION}"
+    global_match_data[0].save(SAVE_DATASET_DIR + global_label)
+
+    for i in range (5):
+        if global_match_data[2] == Team.BLUE.value:
+            player_label = fr"Match{counter} Ind {True} {blue_team_roles[i]}{IMAGE_EXTENSION}"
+            blue_team_images[i].save(SAVE_DATASET_DIR + player_label)
+            player_label = fr"Match{counter} Ind {False} {red_team_roles[i]}{IMAGE_EXTENSION}"
+            red_team_images[i].save(SAVE_DATASET_DIR + player_label)
+        else:
+            player_label = fr"Match{counter} Ind {False} {blue_team_roles[i]}{IMAGE_EXTENSION}"
+            blue_team_images[i].save(SAVE_DATASET_DIR + player_label)
+            player_label = fr"Match{counter} Ind {True} {red_team_roles[i]}{IMAGE_EXTENSION}"
+            red_team_images[i].save(SAVE_DATASET_DIR + player_label)
+    
+    notify(rf"Iteration {counter} completed, going to next...")
+    counter += 1
+        
+    
+
+def on_press(key):
+    global mini_map_position_x, mini_map_position_y, selected_role, global_match_data, red_team_roles, blue_team_roles, red_team_images, blue_team_images
+    if pressed:
+        return
+    pressed.add(key)
+    #print("on_press method: " + str(pressed))
+    if pressed == {keyboard.Key.enter}:
+        run()
+        return
+    
+    if pressed == {keyboard.Key.ctrl_l}:
+        save_data()
+        return
+    
+    if pressed == {keyboard.Key.left}:
+        # set default values
+        selected_role = None
+        red_team_roles = EMPTY_LIST.copy()
+        blue_team_roles = EMPTY_LIST.copy()
+        red_team_images = EMPTY_LIST.copy()
+        blue_team_images = EMPTY_LIST.copy()
+
+        mini_map_position_x, mini_map_position_y = get_cursor_position()
+        image = take_screenshot(mini_map_position_x, mini_map_position_y, return_image=True)
+        global_match_data = [image, None, None]
+        notify(fr"New mini-map position defined {mini_map_position_x}x{mini_map_position_y}")
+        return
+    
+    if pressed == {keyboard.Key.right}:
+        # set default values
+        selected_role = None
+        red_team_roles = EMPTY_LIST.copy()
+        blue_team_roles = EMPTY_LIST.copy()
+        red_team_images = EMPTY_LIST.copy()
+        blue_team_images = EMPTY_LIST.copy()
+
+        image = take_screenshot(mini_map_position_x, mini_map_position_y, return_image=True)
+        global_match_data = [image, None, None]
+        notify(fr"New dataset initiated")
+        return
+
+    if pressed == {keyboard.Key.down}:
+        global_match_data[2] = Team.RED.value
+        notify(fr"{Team.RED.value} Team Wins", "Win team defined")
+        return
+
+    if pressed == {keyboard.Key.up}:
+        global_match_data[2] = Team.BLUE.value
+        notify(fr"{Team.BLUE.value} Team Wins", "Win team defined")
+        return
+
+    # Verifica se uma tecla numérica (0-9) foi pressionada
+    if hasattr(key, 'char') and key.char is not None:
+        if key.char.isdigit():
+            number = int(key.char)
+            if number == 1:
+                selected_role = Role.TOP.value
+            elif number == 2:
+                selected_role = Role.JUNGLE.value
+            elif number == 3:
+                selected_role = Role.MID.value
+            elif number == 4:
+                selected_role = Role.ADC.value
+            elif number == 5:
+                selected_role = Role.SUPPORT.value
+            notify(rf"Role selected: {selected_role}", "Role selection")
+    
+
+
+def on_release(key):
+    if key == keyboard.Key.esc: # esc to stop
+        return False
+    if key in pressed:
+        pressed.remove(key)
+
+
+
+
+# Exemplo de uso
+if __name__ == "__main__":
+    counter = find_last_match(SAVE_DATASET_DIR)
+
+    if counter:
+        counter = 1
+
+
+    with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
+        listener.join()
