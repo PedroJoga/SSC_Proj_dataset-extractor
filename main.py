@@ -252,18 +252,18 @@ def on_press(key):
         # select role and take players screenshots =======================================
         if key.char.isalpha():
             letter = key.char.lower()
-            if letter == 't':
+            if letter == 'a':
                 selected_role = Role.TOP.value
-            elif letter == 'j':
-                selected_role = Role.JUNGLE.value
-            elif letter == 'm':
-                selected_role = Role.MID.value
-            elif letter == 'a':
-                selected_role = Role.ADC.value
             elif letter == 's':
+                selected_role = Role.JUNGLE.value
+            elif letter == 'd':
+                selected_role = Role.MID.value
+            elif letter == 'f':
+                selected_role = Role.ADC.value
+            elif letter == 'g':
                 selected_role = Role.SUPPORT.value
             
-            if letter in ['t', 'j', 'm', 'a', 's']:
+            if letter in ['a', 's', 'd', 'f', 'g']:
                 run()
                 show_current_data()
                 notify(rf"Role selected: {selected_role}", "Role selection")
