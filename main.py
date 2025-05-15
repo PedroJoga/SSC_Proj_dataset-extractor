@@ -19,12 +19,18 @@ class Team(Enum):
     RED = "red"
     BLUE = "blue"
 
-pressed = set()
-
 mini_map_position_x = 0
 mini_map_position_y = 0
 MINI_MAP_OFFSET_X = 226
 MINI_MAP_OFFSET_Y = 226
+
+TEAM_SIDE_DELIMITER = 285 # delimiter based on "mini_map_position_y"
+PLAYER1_DELIMITER = 38 # delimiter based on "mini_map_position_x"
+PLAYER2_DELIMITER = 88 # delimiter based on "mini_map_position_x"
+PLAYER3_DELIMITER = 138 # delimiter based on "mini_map_position_x"
+PLAYER4_DELIMITER = 188 # delimiter based on "mini_map_position_x"
+
+pressed = set()
 
 counter = 1
 selected_role = None
@@ -34,13 +40,8 @@ red_team_roles = EMPTY_LIST.copy() # [<player1>, <player2>, <player3>, <player4>
 red_team_images = EMPTY_LIST.copy()
 blue_team_roles = EMPTY_LIST.copy()
 blue_team_images = EMPTY_LIST.copy()
-global_match_data = [] # [<image>, <time>, <win_team>]
-
-TEAM_SIDE_DELIMITER = 285 # delimiter based on "mini_map_position_y"
-PLAYER1_DELIMITER = 38 # delimiter based on "mini_map_position_x"
-PLAYER2_DELIMITER = 88 # delimiter based on "mini_map_position_x"
-PLAYER3_DELIMITER = 138 # delimiter based on "mini_map_position_x"
-PLAYER4_DELIMITER = 188 # delimiter based on "mini_map_position_x"
+EMPTY_GLOBAL_MATCH_DATA = {"image": None, "time": "", "win_team": None}
+global_match_data = EMPTY_GLOBAL_MATCH_DATA.copy()
 
 SAVE_DATASET_DIR = fr"./dataset"
 IMAGE_EXTENSION = ".png"
@@ -59,7 +60,7 @@ def find_last_match(directory):
 
     return great_num if great_num != -1 else None
 
-def notify(message: str, tittle: str = "Notification", duration: int = 1, turn_off: bool = TURN_OFF_NOTIFICATIONS) -> None:
+def notify(message: str, tittle: str = "\tNotification", duration: int = 1, turn_off: bool = TURN_OFF_NOTIFICATIONS) -> None:
     print("\t" + tittle + ": " + message)
     if turn_off:
         return
@@ -79,7 +80,7 @@ def show_current_data():
     header = format_row([""] + col_titles)
     separator = "+" + "+".join(["-" * (col_width + 2)] * (len(col_titles) + 1)) + "+"
     print(separator)
-    print(fr"Win team: {global_match_data[2]} | Time: {global_match_data[1]} min.")
+    print(fr"Win team: {global_match_data["win_team"]} | Time: {global_match_data["time"]} min.")
     print(separator)
     print(header)
     print(separator)
@@ -99,11 +100,10 @@ def get_cursor_position():
     return x, y
 
 def run():
-    global blue_team_roles, red_team_roles, selected_role, mini_map_position_x, mini_map_position_y
+    global blue_team_roles, red_team_roles, selected_role, mini_map_position_x, mini_map_position_y, blue_team_images, red_team_images, global_match_data
     if not selected_role:
         notify("Role not defined")
         return
-
 
     x, y = get_cursor_position()   
 
@@ -135,40 +135,42 @@ def run():
         selected_team_images[3] = image.copy()
     else:
         #player5
-
         selected_team_roles[4] = selected_role
         selected_team_images[4] = image.copy()
 
 def save_data():
-    global counter, red_team_roles, red_team_images, blue_team_roles, blue_team_images
+    global counter, red_team_roles, red_team_images, blue_team_roles, blue_team_images, global_match_data
 
     if None in red_team_roles:
         notify("Red team role incomplete")
+        show_current_data()
         return
 
     if None in red_team_images:
         notify("Red team images incomplete")
+        show_current_data()
         return
     
     if None in blue_team_roles:
         notify("Blue team role incomplete")
+        show_current_data()
         return
     
     if None in blue_team_images:
         notify("Blue team images incomplete")
+        show_current_data()
         return
     
-    global_match_data[1] = 111 # TODO
-
-    if None in global_match_data:
+    if any(value is None or value == '' for value in global_match_data.values()):
         notify("Global match data incomplete")
+        show_current_data()
+        return
 
-    notify("go_next_iteration()")
-    global_label = fr"Match{counter} Glob {global_match_data[1]} {global_match_data[2]}{IMAGE_EXTENSION}"
-    global_match_data[0].save(SAVE_DATASET_DIR + global_label)
+    global_label = fr"Match{counter} Glob {global_match_data["time"]} {global_match_data["win_team"]}{IMAGE_EXTENSION}"
+    global_match_data["image"].save(SAVE_DATASET_DIR + global_label)
 
     for i in range (5):
-        if global_match_data[2] == Team.BLUE.value:
+        if global_match_data["win_team"] == Team.BLUE.value:
             player_label = fr"Match{counter} Ind {True} {blue_team_roles[i]}{IMAGE_EXTENSION}"
             blue_team_images[i].save(SAVE_DATASET_DIR + player_label)
             player_label = fr"Match{counter} Ind {False} {red_team_roles[i]}{IMAGE_EXTENSION}"
@@ -189,7 +191,7 @@ def on_press(key):
     if pressed:
         return
     pressed.add(key)
-    #print("on_press method: " + str(pressed))
+
     if pressed == {keyboard.Key.enter}:
         run()
         show_current_data()
@@ -199,7 +201,7 @@ def on_press(key):
         save_data()
         return
     
-    if pressed == {keyboard.Key.left}:
+    if pressed == {keyboard.Key.right}:
         # set default values
         selected_role = None
         red_team_roles = EMPTY_LIST.copy()
@@ -209,8 +211,14 @@ def on_press(key):
 
         mini_map_position_x, mini_map_position_y = get_cursor_position()
         image = take_screenshot(mini_map_position_x, mini_map_position_y, return_image=True)
-        global_match_data = [image, None, None]
+        global_match_data = EMPTY_GLOBAL_MATCH_DATA.copy()
+        global_match_data["image"] = image
         notify(fr"New mini-map position defined {mini_map_position_x}x{mini_map_position_y}")
+        return
+    
+    if pressed == {keyboard.Key.left}:
+        global_match_data["time"] = ""
+        notify(fr"Time reset")
         return
     
     if pressed == {keyboard.Key.backspace}:
@@ -222,37 +230,43 @@ def on_press(key):
         blue_team_images = EMPTY_LIST.copy()
 
         image = take_screenshot(mini_map_position_x, mini_map_position_y, return_image=True)
-        global_match_data = [image, None, None]
+        global_match_data = EMPTY_GLOBAL_MATCH_DATA.copy()
+        global_match_data["image"] = image
         notify(fr"New dataset initiated")
         return
 
     if pressed == {keyboard.Key.down}:
-        global_match_data[2] = Team.RED.value
+        global_match_data["win_team"] = Team.RED.value
         notify(fr"{Team.RED.value} Team Wins", "Win team defined")
         return
 
     if pressed == {keyboard.Key.up}:
-        global_match_data[2] = Team.BLUE.value
+        global_match_data["win_team"] = Team.BLUE.value
         notify(fr"{Team.BLUE.value} Team Wins", "Win team defined")
         return
 
-    # Verifica se uma tecla numérica (0-9) foi pressionada
+    
     if hasattr(key, 'char') and key.char is not None:
-        if key.char.isdigit():
-            number = int(key.char)
-            if number == 1:
+        # Verifica se uma tecla de letra (a-z) foi pressionada
+        if key.char.isalpha():
+            letter = key.char.lower()
+            if letter == 't':
                 selected_role = Role.TOP.value
-            elif number == 2:
+            elif letter == 'j':
                 selected_role = Role.JUNGLE.value
-            elif number == 3:
+            elif letter == 'm':
                 selected_role = Role.MID.value
-            elif number == 4:
+            elif letter == 'a':
                 selected_role = Role.ADC.value
-            elif number == 5:
+            elif letter == 's':
                 selected_role = Role.SUPPORT.value
             notify(rf"Role selected: {selected_role}", "Role selection")
-    
-
+            return
+                # Verifica se uma tecla numérica (0-9) foi pressionada
+        if key.char.isdigit():
+            global_match_data["time"] = global_match_data["time"] + str(key.char)
+            notify(rf"Time updated: {global_match_data["time"]}", "Time selection")
+            return
 
 def on_release(key):
     if key == keyboard.Key.esc: # esc to stop
