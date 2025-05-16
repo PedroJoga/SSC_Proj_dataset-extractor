@@ -44,7 +44,7 @@ EMPTY_GLOBAL_MATCH_DATA = {"image": "", "time": "", "win_team": ""}
 global_match_data = EMPTY_GLOBAL_MATCH_DATA.copy()
 
 SAVE_DATASET_DIR = fr"./dataset"
-IMAGE_EXTENSION = ".png"
+IMAGE_EXTENSION = ".jpg"
 TURN_OFF_NOTIFICATIONS = True
 
 def find_last_match(directory):
