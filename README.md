@@ -1,3 +1,15 @@
+Create dir "dataset" for storage
+
+Atalhos:
+Ctrl - começar save(colocar rato no canto superior esquerdo do mapa)
+a,s,d,f,g - roles
+enter - save
+arrow up, arrow down - blue/red wins
+numbers - time
+backspace - clear
+esc - exit
+
+
 ## Development
 
 ### Initialize virtual enviroment (optional)
